@@ -14,6 +14,21 @@ contract Web3RSVP{
         bool paidOut;
     }
 
+    event NewEventCreated(
+    bytes32 eventID,
+    address creatorAddress,
+    uint256 eventTimestamp,
+    uint256 maxCapacity,
+    uint256 deposit,
+    string eventDataCID
+    );
+
+    event NewRSVP(bytes32 eventID, address attendeeAddress);
+
+    event ConfirmedAttendee(bytes32 eventID, address attendeeAddress);
+
+    event DepositsPaidOut(bytes32 eventID);
+
     mapping(bytes32 => CreateEvent) public idToEvent;
 
     function creatNewEvent(uint256 eventTimestamp, uint256 deposit, uint256 maxCapacity, string calldata eventDataCID) external{
@@ -28,6 +43,12 @@ contract Web3RSVP{
         idToEvent[eventId] = CreateEvent(
             eventId,eventDataCID,msg.sender, eventTimestamp,deposit,maxCapacity,confirmedRSVPs, claimedRSVPs, false
         );
+
+        event NewRSVP(bytes32 eventID, address attendeeAddress);
+
+        event ConfirmedAttendee(bytes32 eventID, address attendeeAddress);
+
+        event DepositsPaidOut(bytes32 eventID);
     }
 
     function createNewRSVP(bytes32 eventId) external payable{
@@ -42,9 +63,11 @@ contract Web3RSVP{
         }
 
         myEvent.confirmedRSVP.push(payable(msg.sender));
+
+        emit NewRSVP(eventId, msg.sender);
     }
 
-    function confrimAttendee(bytes32 eventId, address attendee) public{
+    function confirmAttendee(bytes32 eventId, address attendee) public{
         CreateEvent storage myEvent = idToEvent[eventId];
         require(msg.sender == myEvent.eventOwner, "NOT AUTHORIZED");
 
@@ -72,5 +95,30 @@ contract Web3RSVP{
         }
 
         require(sent, "Failed to send Ether");
+    }
+
+    function confirmAllAttendee(bytes32 eventId) external {
+        CreateEvent memory myEvent = idToEvent[eventId];
+        require(msg.sender == myEvent.eventOwner, "NOT AUTHORIZED");
+        for (uint8 i = 0; i < myEvent.confirmedRSVP.length; i++){
+            confirmAttendee(eventId, myEvent.confirmedRSVP[i]);
+        }
+    }
+
+    function withdrawUnclaimedDeposits(bytes32 eventId) external{
+        CreateEvent memory myEvent = idToEvent[eventId];
+        require(!myEvent.paidOut, "ALREADY PAID");
+        require(block.timestamp >= (myEvent.eventTimestamp + 7 days), "TOO EARLY");
+        uint256 unclaimed = myEvent.confirmedRSVP.length - myEvent.claimedRSVPs.length;
+        uint256 payout = unclaimed + myEvent.deposit;
+        myEvent.paidOut = true;
+        (bool sent,) = msg.sender.call{value: payout}('');
+        if(!sent){
+            myEvent.paidOut = false;
+        }
+
+        require(sent, 'Failed to send Ether');
+
+        emit DepositsPaidOut(eventId);
     }
 }
