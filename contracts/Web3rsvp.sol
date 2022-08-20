@@ -44,11 +44,14 @@ contract Web3RSVP{
             eventId,eventDataCID,msg.sender, eventTimestamp,deposit,maxCapacity,confirmedRSVPs, claimedRSVPs, false
         );
 
-        event NewRSVP(bytes32 eventID, address attendeeAddress);
-
-        event ConfirmedAttendee(bytes32 eventID, address attendeeAddress);
-
-        event DepositsPaidOut(bytes32 eventID);
+        emit NewEventCreated(
+            eventId,
+            msg.sender,
+            eventTimestamp,
+            maxCapacity,
+            deposit,
+            eventDataCID
+        );
     }
 
     function createNewRSVP(bytes32 eventId) external payable{
