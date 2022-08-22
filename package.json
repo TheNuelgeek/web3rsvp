@@ -5,6 +5,7 @@
   "author": "Nuelgeek",
   "license": "MIT",
   "dependencies": {
+    "dotenv": "^16.0.1",
     "hardhat": "^2.10.1"
   },
   "devDependencies": {
