@@ -113,7 +113,7 @@ contract Web3RSVP{
         require(!myEvent.paidOut, "ALREADY PAID");
         require(block.timestamp >= (myEvent.eventTimestamp + 7 days), "TOO EARLY");
         uint256 unclaimed = myEvent.confirmedRSVP.length - myEvent.claimedRSVPs.length;
-        uint256 payout = unclaimed + myEvent.deposit;
+        uint256 payout = unclaimed * myEvent.deposit;
         myEvent.paidOut = true;
         (bool sent,) = msg.sender.call{value: payout}('');
         if(!sent){
